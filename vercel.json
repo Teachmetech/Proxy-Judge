@@ -1,0 +1,17 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "package.json",
+            "use": "@vercel/next"
+        }
+    ],
+    "regions": [
+        "all"
+    ],
+    "functions": {
+        "pages/api/**/*.js": {
+            "maxDuration": 10
+        }
+    }
+}
