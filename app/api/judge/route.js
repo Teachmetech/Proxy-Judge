@@ -19,65 +19,61 @@ function getClientIP(request) {
     return request.ip || '127.0.0.1';
 }
 
-// Function to determine proxy anonymity level
+// Function to determine proxy anonymity level (based on original Django logic)
 function detectProxyAnonymity(request, clientIP) {
-    // Check for proxy-revealing headers
-    const proxyHeaders = [
-        'x-forwarded-for',
-        'x-real-ip',
-        'x-forwarded-proto',
-        'x-forwarded-host',
-        'via',
-        'x-proxy-id',
-        'x-proxy-user',
-        'forwarded',
-        'client-ip',
-        'true-client-ip',
-        'x-cluster-client-ip',
-        'x-original-forwarded-for'
-    ];
+    const xForwardedFor = request.headers.get('x-forwarded-for');
+    const via = request.headers.get('via');
+    const xProxyId = request.headers.get('x-proxy-id');
 
-    const transparentHeaders = [
-        'remote-addr',
-        'http-client-ip',
-        'http-x-forwarded-for',
-        'http-x-forwarded',
-        'http-x-cluster-client-ip',
-        'http-forwarded-for',
-        'http-forwarded'
-    ];
+    // Check if there's a comma in X-Forwarded-For (multiple IPs)
+    if (xForwardedFor && xForwardedFor.includes(',')) {
+        // If "unknown" is in X-Forwarded-For, it's ANONYMOUS
+        if (xForwardedFor.toLowerCase().includes('unknown')) {
+            return 'ANONYMOUS';
+        } else {
+            // Split the client IP to get first three segments
+            const ipSegments = clientIP.split('.');
+            if (ipSegments.length >= 3) {
+                const firstThreeSegments = ipSegments[0] + '.' + ipSegments[1] + '.' + ipSegments[2];
 
-    let proxyHeaderCount = 0;
-    let transparentHeaderCount = 0;
+                // Split forwarded IPs and check if any match the first three segments
+                const forwardedIps = xForwardedFor.split(',').map(ip => ip.trim());
+                let isTransparent = false;
 
-    // Count proxy-related headers
-    proxyHeaders.forEach(header => {
-        if (request.headers.get(header)) {
-            proxyHeaderCount++;
+                for (const forwardedIp of forwardedIps) {
+                    if (!forwardedIp.includes(firstThreeSegments)) {
+                        isTransparent = true;
+                        break;
+                    }
+                }
+
+                if (isTransparent) {
+                    return 'TRANSPARENT';
+                } else {
+                    // Check for VIA or X-Proxy-ID headers
+                    if (via || xProxyId) {
+                        return 'ANONYMOUS';
+                    } else {
+                        return 'ELITE';
+                    }
+                }
+            } else {
+                // If IP format is invalid, fall back to checking headers
+                if (via || xProxyId) {
+                    return 'ANONYMOUS';
+                } else {
+                    return 'ELITE';
+                }
+            }
         }
-    });
-
-    transparentHeaders.forEach(header => {
-        if (request.headers.get(header)) {
-            transparentHeaderCount++;
-        }
-    });
-
-    // Check if original IP is exposed in headers
-    const hasOriginalIP = proxyHeaders.some(header => {
-        const value = request.headers.get(header);
-        return value && value.includes(clientIP);
-    });
-
-    // Determine anonymity level
-    if (transparentHeaderCount > 0 || hasOriginalIP) {
-        return 'TRANSPARENT';
-    } else if (proxyHeaderCount > 2) {
-        return 'ANONYMOUS';
-    } else if (proxyHeaderCount <= 1) {
-        return 'ELITE';
     } else {
-        return 'ANONYMOUS';
+        // No comma in X-Forwarded-For or no X-Forwarded-For header
+        // Check for VIA or X-Proxy-ID headers
+        if (via || xProxyId) {
+            return 'ANONYMOUS';
+        } else {
+            return 'ELITE';
+        }
     }
 }
 
