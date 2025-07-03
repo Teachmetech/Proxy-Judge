@@ -1,8 +1,6 @@
-'use client'
-
 import { useState } from 'react';
 
-export default function Home() {
+export default function App() {
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
     const [copiedCode, setCopiedCode] = useState(null);
@@ -25,7 +23,7 @@ export default function Home() {
         curl: {
             language: 'curl',
             title: 'cURL',
-            code: `curl -X GET "https://proxy-judge.com/api/judge" \\
+            code: `curl -X GET "https://api.proxy-judge.com/judge" \\
   -H "Accept: application/json" \\
   -H "User-Agent: MyApp/1.0"`
         },
@@ -33,7 +31,7 @@ export default function Home() {
             language: 'javascript',
             title: 'JavaScript (Browser)',
             code: `// Using fetch API
-fetch('https://proxy-judge.com/api/judge')
+fetch('https://api.proxy-judge.com/judge')
   .then(response => response.json())
   .then(data => {
     console.log('Anonymity Level:', data.PROXY_ANONYMITY);
@@ -47,58 +45,6 @@ fetch('https://proxy-judge.com/api/judge')
   })
   .catch(error => console.error('Error:', error));`
         },
-        nodejs: {
-            language: 'javascript',
-            title: 'Node.js (axios)',
-            code: `const axios = require('axios');
-
-async function analyzeProxy() {
-  try {
-    const config = {
-      method: 'GET',
-      url: 'https://proxy-judge.com/api/judge',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'MyApp/1.0'
-      },
-      timeout: 10000
-    };
-    
-    const response = await axios(config);
-    
-    const { 
-      PROXY_ANONYMITY, 
-      PROXY_COUNTRY, 
-      PROXY_CITY,
-      REQUEST_TIME,
-      REQUEST_TIME_FLOAT 
-    } = response.data;
-    
-    console.log('\\n=== Proxy Analysis Results ===');
-    console.log(\`Anonymity Level: \${PROXY_ANONYMITY}\`);
-    console.log(\`Location: \${PROXY_CITY}, \${PROXY_COUNTRY}\`);
-    console.log(\`Timestamp: \${new Date(REQUEST_TIME * 1000).toISOString()}\`);
-    console.log(\`Precise Time: \${REQUEST_TIME_FLOAT}\`);
-    
-    return response.data;
-    
-  } catch (error) {
-    if (error.response) {
-      console.error('API Error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      console.error('Network Error:', error.message);
-    } else {
-      console.error('Error:', error.message);
-    }
-    throw error;
-  }
-}
-
-// Usage
-analyzeProxy()
-  .then(data => console.log('Success:', data))
-  .catch(err => console.log('Failed:', err.message));`
-        },
         python: {
             language: 'python',
             title: 'Python',
@@ -107,7 +53,7 @@ import json
 from datetime import datetime
 
 # Make the request
-url = 'https://proxy-judge.com/api/judge'
+url = 'https://api.proxy-judge.com/judge'
 headers = {
     'User-Agent': 'MyApp/1.0',
     'Accept': 'application/json'
@@ -135,7 +81,7 @@ except KeyError as e:
             title: 'PHP',
             code: `<?php
 function analyzeProxy() {
-    $url = 'https://proxy-judge.com/api/judge';
+    $url = 'https://api.proxy-judge.com/judge';
     
     // Initialize cURL
     $ch = curl_init();
@@ -225,7 +171,7 @@ func analyzeProxy() (*ProxyResponse, error) {
         Timeout: 10 * time.Second,
     }
     
-    req, err := http.NewRequest("GET", "https://proxy-judge.com/api/judge", nil)
+    req, err := http.NewRequest("GET", "https://api.proxy-judge.com/judge", nil)
     if err != nil {
         return nil, fmt.Errorf("creating request: %w", err)
     }
@@ -307,7 +253,7 @@ public class ProxyAnalyzer {
             .build();
             
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create("https://proxy-judge.com/api/judge"))
+            .uri(URI.create("https://api.proxy-judge.com/judge"))
             .header("Accept", "application/json")
             .header("User-Agent", "MyApp/1.0")
             .timeout(Duration.ofSeconds(10))
@@ -351,7 +297,7 @@ require 'uri'
 require 'time'
 
 class ProxyAnalyzer
-  API_URL = 'https://proxy-judge.com/api/judge'.freeze
+  API_URL = 'https://api.proxy-judge.com/judge'.freeze
   
   def self.analyze_proxy
     uri = URI(API_URL)
@@ -508,7 +454,9 @@ end`
     const testEndpoint = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/judge');
+            // For development, use localhost. In production, this will be api.proxy-judge.com
+            const apiUrl = import.meta.env.DEV ? 'http://localhost:8000/judge' : 'https://api.proxy-judge.com/judge';
+            const res = await fetch(apiUrl);
             const data = await res.json();
             setResponse(data);
         } catch (error) {
@@ -555,7 +503,7 @@ end`
                         </div>
 
                         <div className="bg-gray-900/50 rounded-xl p-4 mb-6 border border-gray-700">
-                            <code className="text-green-400 font-mono text-lg">/api/judge</code>
+                            <code className="text-green-400 font-mono text-lg">https://api.proxy-judge.com/judge</code>
                         </div>
 
                         <p className="text-blue-200 mb-6 text-lg">

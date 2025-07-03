@@ -1,163 +1,208 @@
-# Proxy Judge
+# Proxy Judge Monorepo
 
-A simple web service to analyze proxy connections, providing information about proxy location, anonymity level, and performance metrics.
+A comprehensive proxy detection and analysis service with separate frontend and backend deployments.
 
-## Features
+## 🏗️ Architecture
 
-- **Proxy Location Detection**: Identifies the country and city of the proxy server
-- **Anonymity Level Analysis**: Determines proxy anonymity level (TRANSPARENT, ANONYMOUS, ELITE)
-- **Performance Metrics**: Provides request timing information
-- **Simple API**: Easy-to-use JSON API endpoint
-- **Beautiful UI**: Clean web interface for testing and documentation
+This monorepo contains two main applications:
 
-## API Endpoint
+- **Frontend** (`/frontend`) - React + Vite application for proxy-judge.com
+- **Backend** (`/backend`) - Node.js Express API for api.proxy-judge.com
 
-### GET `/api/check`
+## 🚀 Quick Start
 
-Returns proxy analysis data in JSON format.
+### Prerequisites
+- Node.js >= 18.0.0
+- pnpm (recommended) or npm
 
-#### Response Format
+### Development Setup
 
+1. **Clone and install dependencies:**
+```bash
+git clone <repository-url>
+cd Proxy-Judge
+pnpm install
+```
+
+2. **Start both frontend and backend:**
+```bash
+pnpm dev
+```
+
+3. **Or start individually:**
+```bash
+# Frontend only (runs on http://localhost:3000)
+pnpm dev:frontend
+
+# Backend only (runs on http://localhost:8000)
+pnpm dev:backend
+```
+
+## 📁 Project Structure
+
+```
+Proxy-Judge/
+├── frontend/              # React + Vite frontend
+│   ├── src/
+│   │   ├── App.jsx       # Main React component
+│   │   ├── main.jsx      # Entry point
+│   │   └── index.css     # TailwindCSS styles
+│   ├── package.json
+│   ├── vite.config.js
+│   └── tailwind.config.js
+├── backend/               # Node.js Express API
+│   ├── server.js         # Main server file
+│   ├── package.json
+│   ├── railway.json      # Railway deployment config
+│   └── nixpacks.toml     # Build configuration
+├── package.json          # Root workspace configuration
+└── README.md
+```
+
+## 🌐 Deployment
+
+### Frontend (Vercel) - proxy-judge.com
+
+The frontend is optimized for Vercel deployment:
+
+1. **Connect to Vercel:**
+   - Import repository to Vercel
+   - Set build command: `cd frontend && npm run build`
+   - Set output directory: `frontend/dist`
+   - Set install command: `npm run install:all`
+
+2. **Custom Domain:**
+   - Add `proxy-judge.com` as custom domain in Vercel dashboard
+
+### Backend (Railway) - api.proxy-judge.com
+
+The backend is optimized for Railway deployment:
+
+1. **Deploy to Railway:**
+   ```bash
+   cd backend
+   railway login
+   railway new
+   railway up
+   ```
+
+2. **Custom Domain:**
+   - Add `api.proxy-judge.com` in Railway dashboard
+   - Railway will handle SSL automatically
+
+3. **Alternative: One-Click Deploy**
+   [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/nodejs)
+
+## 🔧 Available Scripts
+
+### Root Level
+- `pnpm dev` - Start both frontend and backend
+- `pnpm dev:frontend` - Start frontend only
+- `pnpm dev:backend` - Start backend only
+- `pnpm build` - Build frontend for production
+- `pnpm install:all` - Install all dependencies
+- `pnpm clean` - Clean node_modules and build artifacts
+
+### Frontend (`/frontend`)
+- `pnpm dev` - Start development server
+- `pnpm build` - Build for production
+- `pnpm preview` - Preview production build
+
+### Backend (`/backend`)
+- `pnpm start` - Start production server
+- `pnpm dev` - Start development server with nodemon
+
+## 🛠️ API Endpoints
+
+### Main Endpoint
+**GET** `https://api.proxy-judge.com/judge`
+
+Response:
 ```json
 {
-  "PROXY_COUNTRY": "ES",
-  "PROXY_CITY": "Madrid",
-  "PROXY_ANONYMITY": "ELITE",
-  "REQUEST_TIME_FLOAT": 1751352740.387924,
-  "REQUEST_TIME": 1751352740
+  "PROXY_COUNTRY": "US",
+  "PROXY_CITY": "New York",
+  "PROXY_ANONYMITY": "TRANSPARENT",
+  "ORIGINAL_CLIENT_IP": "192.168.1.1",
+  "REQUEST_TIME_FLOAT": 1640995200.123,
+  "REQUEST_TIME": 1640995200
 }
 ```
 
-#### Response Fields
+### Health Check
+**GET** `https://api.proxy-judge.com/health`
 
-- **PROXY_COUNTRY**: ISO country code (e.g., "ES", "US", "GB")
-- **PROXY_CITY**: City name where the proxy is located
-- **PROXY_ANONYMITY**: Anonymity level
-  - `TRANSPARENT`: Proxy reveals original IP address
-  - `ANONYMOUS`: Proxy hides original IP but reveals itself as a proxy
-  - `ELITE`: Proxy hides original IP and doesn't reveal itself as a proxy
-- **REQUEST_TIME_FLOAT**: Precise timestamp with decimals
-- **REQUEST_TIME**: Integer timestamp
+## 🧪 Testing
 
-## Usage Examples
-
-### cURL
+Test the API locally:
 ```bash
-curl https://your-domain.vercel.app/api/check
+curl http://localhost:8000/judge
 ```
 
-### JavaScript (Browser)
-```javascript
-fetch('/api/check')
-  .then(response => response.json())
-  .then(data => console.log(data));
-```
-
-### Python
-```python
-import requests
-
-response = requests.get('https://your-domain.vercel.app/api/check')
-data = response.json()
-print(data)
-```
-
-## Deployment
-
-This project is designed to be deployed on Vercel:
-
-1. Fork or clone this repository
-2. Connect your GitHub repository to Vercel
-3. Deploy with default settings
-4. Your proxy judge will be available at `https://your-project.vercel.app`
-
-### Manual Deployment
-
+Test production API:
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
+curl https://api.proxy-judge.com/judge
 ```
 
-## Development
+## 🔍 Features
 
-### Prerequisites
+- **🕵️ Proxy Detection**: Identifies transparent, anonymous, and elite proxies
+- **🌍 Geolocation**: Determines country and city from IP address
+- **⚡ Fast Response**: Optimized for quick analysis
+- **🛡️ Security**: Built with security headers and CORS support
+- **📱 Responsive**: Mobile-friendly frontend interface
+- **🎨 Modern UI**: Beautiful gradient design with TailwindCSS
+- **🔧 Code Examples**: Multiple programming language examples
 
-- Node.js 18+ 
-- npm or yarn
+## 🧬 Technology Stack
 
-### Setup
+### Frontend
+- React 19
+- Vite
+- TailwindCSS
+- JavaScript (ES6+)
 
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd proxy-judge
+### Backend
+- Node.js
+- Express.js
+- CORS, Helmet, Morgan
+- ES Modules
 
-# Install dependencies
-npm install
+## 📦 Dependencies
 
-# Run development server
-npm run dev
-```
+The project uses pnpm workspaces for efficient dependency management. All dependencies are installed from the root level.
 
-The application will be available at `http://localhost:3000`.
+## 🐛 Troubleshooting
 
-### Build
+### Frontend not connecting to backend
+- Check if backend is running on port 8000
+- Verify CORS configuration in backend
+- Check API URL in frontend code
 
-```bash
-npm run build
-```
+### Railway deployment issues
+- Ensure `railway.json` and `nixpacks.toml` are present
+- Check build logs in Railway dashboard
+- Verify environment variables
 
-## How It Works
+### Vercel deployment issues
+- Check build command and output directory
+- Ensure dependencies are properly installed
+- Review build logs in Vercel dashboard
 
-### IP Detection
-The service analyzes various HTTP headers to determine the client's IP address:
-- `x-forwarded-for`
-- `x-real-ip`
-- `cf-connecting-ip` (Cloudflare)
-- Connection remote address
+## 📄 License
 
-### Anonymity Detection
-Anonymity level is determined by analyzing HTTP headers:
+ISC
 
-1. **TRANSPARENT**: Original IP is visible in headers or transparent proxy headers are present
-2. **ANONYMOUS**: Some proxy headers are present but original IP is hidden
-3. **ELITE**: Minimal proxy headers, appears like a direct connection
-
-### Geolocation
-Location data is obtained using free geolocation APIs:
-- Primary: ipapi.co
-- Fallback: ip-api.com
-
-## Rate Limits
-
-The geolocation services have rate limits:
-- ipapi.co: 1,000 requests/day (free tier)
-- ip-api.com: 1,000 requests/hour (free tier)
-
-For production use with high traffic, consider upgrading to paid plans or implementing caching.
-
-## CORS Support
-
-The API includes CORS headers to allow cross-origin requests from any domain.
-
-## Error Handling
-
-The API includes comprehensive error handling:
-- Invalid methods return 405
-- Server errors return 500 with error details
-- Graceful fallbacks for geolocation failures
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test both frontend and backend
 5. Submit a pull request
 
-## License
+## 🔗 Links
 
-This project is open source and available under the MIT License. 
+- **Frontend**: https://proxy-judge.com
+- **API**: https://api.proxy-judge.com
+- **Health Check**: https://api.proxy-judge.com/health 

@@ -1,26 +1,30 @@
 {
-    "name": "proxy-judge",
+    "name": "proxy-judge-monorepo",
     "version": "1.0.0",
-    "description": "A simple proxy detection and analysis service",
+    "description": "Proxy Judge - Frontend and Backend Monorepo",
     "private": true,
     "scripts": {
-        "dev": "next dev",
-        "build": "next build",
-        "start": "next start",
-        "lint": "next lint"
-    },
-    "dependencies": {
-        "next": "^15.1.0",
-        "react": "^18.3.1",
-        "react-dom": "^18.3.1"
+        "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
+        "dev:frontend": "pnpm --filter frontend dev",
+        "dev:backend": "pnpm --filter backend dev",
+        "build": "pnpm --filter frontend build",
+        "start:frontend": "pnpm --filter frontend preview",
+        "start:backend": "pnpm --filter backend start",
+        "install:all": "pnpm install",
+        "clean": "rm -rf frontend/node_modules backend/node_modules frontend/dist"
     },
     "devDependencies": {
-        "eslint": "^8.0.0",
-        "eslint-config-next": "^14.0.0",
-        "tailwindcss": "^3.4.0",
-        "autoprefixer": "^10.4.0",
-        "postcss": "^8.4.0"
+        "concurrently": "^8.2.2"
     },
+    "keywords": [
+        "proxy",
+        "judge",
+        "anonymity",
+        "api",
+        "monorepo"
+    ],
+    "author": "",
+    "license": "ISC",
     "engines": {
         "node": ">=18.0.0"
     }

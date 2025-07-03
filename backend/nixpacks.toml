@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ['nodejs_18', 'pnpm']
+
+[phases.install]
+cmds = ['pnpm install --prod']
+
+[phases.build]
+cmds = ['echo "No build step required"']
+
+[start]
+cmd = 'pnpm start'
