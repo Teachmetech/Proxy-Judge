@@ -196,14 +196,39 @@ app.get('/judge', async (req, res) => {
     }
 });
 
-// OPTIONS handler for CORS preflight
+// OPTIONS handlers for CORS preflight
 app.options('/judge', (req, res) => {
+    res.status(200).end();
+});
+
+app.options('/headers', (req, res) => {
     res.status(200).end();
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Raw headers endpoint
+app.get('/headers', (req, res) => {
+    try {
+        const clientIP = getClientIP(req);
+        
+        res.json({
+            ip: clientIP,
+            headers: req.headers,
+            method: req.method,
+            url: req.url,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Headers endpoint error:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+        });
+    }
 });
 
 // Root endpoint
@@ -213,6 +238,7 @@ app.get('/', (req, res) => {
         version: '1.0.0',
         endpoints: {
             judge: '/judge',
+            headers: '/headers',
             health: '/health'
         }
     });
