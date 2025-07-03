@@ -24,12 +24,23 @@ Ensure your code is pushed to GitHub/GitLab/Bitbucket.
    - Vercel will detect it as a monorepo
 
 3. **Configure Build Settings**
+   
+   **Option A: Use Root Directory (Recommended)**
+   ```
+   Framework Preset: Other
+   Root Directory: ./
+   Build Command: cd frontend && pnpm build
+   Output Directory: frontend/dist
+   Install Command: pnpm install
+   ```
+   
+   **Option B: Use Frontend Directory**
    ```
    Framework Preset: Vite
    Root Directory: frontend
-   Build Command: npm run build
+   Build Command: pnpm build
    Output Directory: dist
-   Install Command: cd .. && npm run install:all
+   Install Command: pnpm install
    ```
 
 4. **Deploy**
@@ -142,6 +153,13 @@ curl https://api.proxy-judge.com/judge
 - Check Node.js version (needs 18+)
 - Verify TailwindCSS configuration
 - Check import paths
+
+**Vercel "No Output Directory" error:**
+- Ensure `vercel.json` is in root directory
+- Verify Output Directory is set to `frontend/dist`
+- Check Build Command: `cd frontend && pnpm build`
+- Make sure Install Command is `pnpm install`
+- Try deploying with Frontend directory as Root Directory
 
 **Backend deployment fails:**
 - Verify `package.json` scripts
