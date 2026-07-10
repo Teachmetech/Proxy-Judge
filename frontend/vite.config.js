@@ -9,5 +9,16 @@ export default defineConfig({
     },
     preview: {
         port: 3000,
-    }
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    three: ['three'],
+                    gsap: ['gsap'],
+                    react: ['react', 'react-dom'],
+                },
+            },
+        },
+    },
 }) 

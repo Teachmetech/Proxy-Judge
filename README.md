@@ -1,208 +1,121 @@
-# Proxy Judge Monorepo
+# Proxy Judge
 
-A comprehensive proxy detection and analysis service with separate frontend and backend deployments.
+Free HTTP proxy testing API. Route a request through your proxy to the judge and get back anonymity level, exit-node location, blacklist status, and timing — as JSON. No API keys, no signup.
 
-## 🏗️ Architecture
+- **Site:** [proxy-judge.com](https://proxy-judge.com)
+- **API:** [api.proxy-judge.com](https://api.proxy-judge.com)
 
-This monorepo contains two main applications:
+## Features
 
-- **Frontend** (`/frontend`) - React + Vite application for proxy-judge.com
-- **Backend** (`/backend`) - Node.js Express API for api.proxy-judge.com
+- **Anonymity classification** — `ELITE`, `ANONYMOUS`, or `TRANSPARENT` from request headers
+- **Exit-node geolocation** — country, city, region, coordinates, ISP / org
+- **DNSBL blacklist checks** — Spamhaus, SpamCop, SORBS, Barracuda, UCEPROTECT
+- **Timing** — Unix timestamps plus server processing time
+- **Zero auth** — public `GET` endpoint
 
-## 🚀 Quick Start
+## Quick example
 
-### Prerequisites
-- Node.js >= 18.0.0
-- pnpm (recommended) or npm
+Call the judge **through** the proxy under test (not from your browser alone):
 
-### Development Setup
-
-1. **Clone and install dependencies:**
 ```bash
-git clone <repository-url>
-cd Proxy-Judge
-pnpm install
+curl -x http://user:pass@HOST:PORT \
+  "https://api.proxy-judge.com/judge" \
+  -H "Accept: application/json"
 ```
 
-2. **Start both frontend and backend:**
-```bash
-pnpm dev
-```
+Example response:
 
-3. **Or start individually:**
-```bash
-# Frontend only (runs on http://localhost:3000)
-pnpm dev:frontend
-
-# Backend only (runs on http://localhost:8000)
-pnpm dev:backend
-```
-
-## 📁 Project Structure
-
-```
-Proxy-Judge/
-├── frontend/              # React + Vite frontend
-│   ├── src/
-│   │   ├── App.jsx       # Main React component
-│   │   ├── main.jsx      # Entry point
-│   │   └── index.css     # TailwindCSS styles
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
-├── backend/               # Node.js Express API
-│   ├── server.js         # Main server file
-│   ├── package.json
-│   ├── railway.json      # Railway deployment config
-│   └── nixpacks.toml     # Build configuration
-├── package.json          # Root workspace configuration
-└── README.md
-```
-
-## 🌐 Deployment
-
-### Frontend (Vercel) - proxy-judge.com
-
-The frontend is optimized for Vercel deployment:
-
-1. **Connect to Vercel:**
-   - Import repository to Vercel
-   - Set build command: `cd frontend && npm run build`
-   - Set output directory: `frontend/dist`
-   - Set install command: `npm run install:all`
-
-2. **Custom Domain:**
-   - Add `proxy-judge.com` as custom domain in Vercel dashboard
-
-### Backend (Railway) - api.proxy-judge.com
-
-The backend is optimized for Railway deployment:
-
-1. **Deploy to Railway:**
-   ```bash
-   cd backend
-   railway login
-   railway new
-   railway up
-   ```
-
-2. **Custom Domain:**
-   - Add `api.proxy-judge.com` in Railway dashboard
-   - Railway will handle SSL automatically
-
-3. **Alternative: One-Click Deploy**
-   [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/nodejs)
-
-## 🔧 Available Scripts
-
-### Root Level
-- `pnpm dev` - Start both frontend and backend
-- `pnpm dev:frontend` - Start frontend only
-- `pnpm dev:backend` - Start backend only
-- `pnpm build` - Build frontend for production
-- `pnpm install:all` - Install all dependencies
-- `pnpm clean` - Clean node_modules and build artifacts
-
-### Frontend (`/frontend`)
-- `pnpm dev` - Start development server
-- `pnpm build` - Build for production
-- `pnpm preview` - Preview production build
-
-### Backend (`/backend`)
-- `pnpm start` - Start production server
-- `pnpm dev` - Start development server with nodemon
-
-## 🛠️ API Endpoints
-
-### Main Endpoint
-**GET** `https://api.proxy-judge.com/judge`
-
-Response:
 ```json
 {
+  "PROXY_IP": "203.0.113.50",
+  "PROXY_ANONYMITY": "ELITE",
   "PROXY_COUNTRY": "US",
   "PROXY_CITY": "New York",
-  "PROXY_ANONYMITY": "TRANSPARENT",
-  "ORIGINAL_CLIENT_IP": "192.168.1.1",
-  "REQUEST_TIME_FLOAT": 1640995200.123,
-  "REQUEST_TIME": 1640995200
+  "PROXY_REGION": "New York",
+  "PROXY_LATITUDE": 40.71,
+  "PROXY_LONGITUDE": -74.0,
+  "PROXY_ISP": "Example ISP",
+  "PROXY_ORG": "Example Org",
+  "PROXY_TIMEZONE": "America/New_York",
+  "PROXY_BLACKLISTED": false,
+  "PROXY_BLACKLIST_COUNT": 0,
+  "PROXY_BLACKLISTS": [],
+  "ORIGINAL_CLIENT_IP": null,
+  "REQUEST_TIME": 1767932460,
+  "REQUEST_TIME_FLOAT": 1767932460.134,
+  "JUDGE_PROCESSING_MS": 42.15
 }
 ```
 
-### Health Check
-**GET** `https://api.proxy-judge.com/health`
+| Field | Meaning |
+|-------|---------|
+| `PROXY_ANONYMITY` | `ELITE` / `ANONYMOUS` / `TRANSPARENT` |
+| `PROXY_IP` | Exit IP the judge saw |
+| `PROXY_COUNTRY` / `PROXY_CITY` | Geo of the exit node |
+| `PROXY_BLACKLISTED` | `true` if listed on any checked DNSBL |
+| `ORIGINAL_CLIENT_IP` | Leaked client IP when anonymity is `TRANSPARENT` |
+| `REQUEST_TIME` | Unix timestamp (seconds) when the request hit the judge |
 
-## 🧪 Testing
+More endpoints and env vars: [backend/README.md](./backend/README.md)
 
-Test the API locally:
+## Project layout
+
+```
+Proxy-Judge/
+├── frontend/          # React + Vite marketing site
+├── backend/           # Express API
+├── deploy/            # nginx + DigitalOcean helpers
+├── docker-compose.yml # API + nginx stack
+└── DEPLOYMENT.md      # Droplet / TLS guide
+```
+
+## Local development
+
+**Requirements:** Node.js 20+, [pnpm](https://pnpm.io)
+
+```bash
+pnpm install
+
+# both apps
+pnpm dev
+
+# or separately
+pnpm dev:backend    # http://localhost:8000
+pnpm dev:frontend   # http://localhost:3000
+```
+
 ```bash
 curl http://localhost:8000/judge
+curl -x http://user:pass@HOST:PORT http://localhost:8000/judge
 ```
 
-Test production API:
+Copy [`.env.example`](./.env.example) to `.env` only if you change defaults. Never commit `.env`.
+
+## Production (DigitalOcean)
+
+The API runs as Docker containers on a droplet behind nginx.
+
 ```bash
-curl https://api.proxy-judge.com/judge
+cp .env.example .env
+./deploy/deploy.sh
+
+# after DNS A record for api.proxy-judge.com → droplet IP
+EMAIL=you@example.com ./deploy/setup-tls.sh
 ```
 
-## 🔍 Features
+Full walkthrough: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-- **🕵️ Proxy Detection**: Identifies transparent, anonymous, and elite proxies
-- **🌍 Geolocation**: Determines country and city from IP address
-- **⚡ Fast Response**: Optimized for quick analysis
-- **🛡️ Security**: Built with security headers and CORS support
-- **📱 Responsive**: Mobile-friendly frontend interface
-- **🎨 Modern UI**: Beautiful gradient design with TailwindCSS
-- **🔧 Code Examples**: Multiple programming language examples
+Frontend can be deployed separately (e.g. Vercel) to `proxy-judge.com`.
 
-## 🧬 Technology Stack
+## API endpoints
 
-### Frontend
-- React 19
-- Vite
-- TailwindCSS
-- JavaScript (ES6+)
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/judge` | Main verdict (use via proxy) |
+| `GET` | `/headers` | Connecting IP + raw headers (debug) |
+| `GET` | `/health` | Health check |
+| `GET` | `/` | API info |
 
-### Backend
-- Node.js
-- Express.js
-- CORS, Helmet, Morgan
-- ES Modules
+## License
 
-## 📦 Dependencies
-
-The project uses pnpm workspaces for efficient dependency management. All dependencies are installed from the root level.
-
-## 🐛 Troubleshooting
-
-### Frontend not connecting to backend
-- Check if backend is running on port 8000
-- Verify CORS configuration in backend
-- Check API URL in frontend code
-
-### Railway deployment issues
-- Ensure `railway.json` and `nixpacks.toml` are present
-- Check build logs in Railway dashboard
-- Verify environment variables
-
-### Vercel deployment issues
-- Check build command and output directory
-- Ensure dependencies are properly installed
-- Review build logs in Vercel dashboard
-
-## 📄 License
-
-ISC
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test both frontend and backend
-5. Submit a pull request
-
-## 🔗 Links
-
-- **Frontend**: https://proxy-judge.com
-- **API**: https://api.proxy-judge.com
-- **Health Check**: https://api.proxy-judge.com/health 
+[MIT](./LICENSE) © 2026 Varand Abrahamian

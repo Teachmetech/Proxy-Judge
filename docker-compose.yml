@@ -1,0 +1,61 @@
+# Proxy Judge API — DigitalOcean droplet stack
+# Usage:
+#   cp .env.example .env
+#   docker compose up -d --build
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: proxy-judge-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+      TRUST_PROXY: "1"
+    expose:
+      - "8000"
+    networks:
+      - proxy-judge
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: proxy-judge-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro
+      - ./deploy/certbot/www:/var/www/certbot:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - proxy-judge
+
+  # Optional: run once for TLS certs, then periodically for renewal
+  # docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d api.proxy-judge.com --email you@example.com --agree-tos --no-eff-email
+  certbot:
+    image: certbot/certbot:latest
+    container_name: proxy-judge-certbot
+    volumes:
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/certbot/www:/var/www/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+    profiles:
+      - tls
+
+networks:
+  proxy-judge:
+    driver: bridge

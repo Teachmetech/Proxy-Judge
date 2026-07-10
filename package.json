@@ -1,31 +1,22 @@
 {
-    "name": "proxy-judge-monorepo",
-    "version": "1.0.0",
-    "description": "Proxy Judge - Frontend and Backend Monorepo",
-    "private": true,
-    "scripts": {
-        "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
-        "dev:frontend": "pnpm --filter frontend dev",
-        "dev:backend": "pnpm --filter backend dev",
-        "build": "pnpm --filter frontend build",
-        "start:frontend": "pnpm --filter frontend preview",
-        "start:backend": "pnpm --filter backend start",
-        "install:all": "pnpm install",
-        "clean": "rm -rf frontend/node_modules backend/node_modules frontend/dist"
-    },
-    "devDependencies": {
-        "concurrently": "^8.2.2"
-    },
-    "keywords": [
-        "proxy",
-        "judge",
-        "anonymity",
-        "api",
-        "monorepo"
-    ],
-    "author": "",
-    "license": "ISC",
-    "engines": {
-        "node": ">=18.0.0"
-    }
+  "name": "proxy-judge-monorepo",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Proxy Judge — frontend and backend",
+  "scripts": {
+    "dev": "concurrently -n web,api -c cyan,magenta \"pnpm --filter proxy-judge-frontend dev\" \"pnpm --filter proxy-judge-backend dev\"",
+    "dev:frontend": "pnpm --filter proxy-judge-frontend dev",
+    "dev:backend": "pnpm --filter proxy-judge-backend dev",
+    "build": "pnpm --filter proxy-judge-frontend build",
+    "start:backend": "pnpm --filter proxy-judge-backend start",
+    "test:backend": "pnpm --filter proxy-judge-backend test",
+    "install:all": "pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.12.2"
 }

@@ -1,115 +1,80 @@
-# Proxy Judge Backend API
+# Proxy Judge Backend
 
-A Node.js Express API for analyzing proxy connections and detecting anonymity levels.
+Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DNSBL blacklist status, and timing.
 
-## Features
+## Endpoints
 
-- 🔍 **Proxy Detection**: Identifies transparent, anonymous, and elite proxies
-- 🌍 **Geolocation**: Determines country and city from IP address
-- ⚡ **Fast Response**: Optimized for quick analysis
-- 🛡️ **Security**: Built with security headers and CORS support
-- 📊 **Monitoring**: Health check endpoint for monitoring
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/judge` | Main verdict (call **through** the proxy under test) |
+| `GET` | `/headers` | Echo connecting IP + raw headers (debug) |
+| `GET` | `/health` | Health check |
+| `GET` | `/` | API info |
 
-## API Endpoints
+### `GET /judge` response
 
-### `GET /judge`
-Main endpoint for proxy analysis.
-
-**Response:**
 ```json
 {
+  "PROXY_IP": "203.0.113.50",
+  "PROXY_ANONYMITY": "ELITE",
   "PROXY_COUNTRY": "US",
   "PROXY_CITY": "New York",
-  "PROXY_ANONYMITY": "TRANSPARENT",
-  "ORIGINAL_CLIENT_IP": "192.168.1.1",
-  "REQUEST_TIME_FLOAT": 1640995200.123,
-  "REQUEST_TIME": 1640995200
+  "PROXY_REGION": "New York",
+  "PROXY_LATITUDE": 40.71,
+  "PROXY_LONGITUDE": -74.0,
+  "PROXY_ISP": "Example ISP",
+  "PROXY_ORG": "Example Org",
+  "PROXY_TIMEZONE": "America/New_York",
+  "PROXY_BLACKLISTED": false,
+  "PROXY_BLACKLIST_COUNT": 0,
+  "PROXY_BLACKLISTS": [],
+  "ORIGINAL_CLIENT_IP": null,
+  "REQUEST_TIME": 1767932460,
+  "REQUEST_TIME_FLOAT": 1767932460.134,
+  "JUDGE_PROCESSING_MS": 42.15
 }
 ```
 
-### `GET /health`
-Health check endpoint.
+`PROXY_ANONYMITY` is one of `ELITE`, `ANONYMOUS`, `TRANSPARENT`.
 
-### `GET /`
-API information and available endpoints.
+## Local development
 
-## Local Development
-
-1. Install dependencies:
 ```bash
+cd backend
 pnpm install
-```
-
-2. Start development server:
-```bash
 pnpm dev
+# → http://localhost:8000/judge
 ```
 
-3. Test the API:
 ```bash
 curl http://localhost:8000/judge
+curl -x http://user:pass@PROXY_HOST:PORT http://localhost:8000/judge
 ```
 
-## Railway Deployment
+## Docker (DigitalOcean)
 
-This backend is optimized for Railway deployment with custom domain support.
+From the **repo root**:
 
-### Quick Deploy
+```bash
+cp .env.example .env
+./deploy/deploy.sh
+```
 
-1. **Connect Repository**: Link your GitHub repository to Railway
-2. **Configure Domain**: Set up `api.proxy-judge.com` as a custom domain
-3. **Deploy**: Railway will automatically build and deploy
+Then point `api.proxy-judge.com` A record at the droplet and:
 
-### Manual Deployment Steps
+```bash
+EMAIL=you@example.com ./deploy/setup-tls.sh
+```
 
-1. **Create Railway Project**:
-   ```bash
-   railway login
-   railway new
-   ```
+See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full droplet walkthrough.
 
-2. **Deploy**:
-   ```bash
-   railway up
-   ```
+## Environment
 
-3. **Set Custom Domain**:
-   - Go to Railway dashboard
-   - Navigate to your project
-   - Add custom domain: `api.proxy-judge.com`
-
-### Environment Variables
-
-No environment variables are required for basic functionality. Optional:
-
-- `NODE_ENV`: Set to `production` for production deployment
-- `PORT`: Railway sets this automatically
-
-## Configuration Files
-
-- **`railway.json`**: Railway deployment configuration
-- **`nixpacks.toml`**: Build configuration for Railway's Nixpacks
-- **`package.json`**: Dependencies and scripts
-
-## Architecture
-
-- **Express.js**: Web framework
-- **CORS**: Cross-origin resource sharing
-- **Helmet**: Security headers
-- **Morgan**: Request logging
-
-## Anonymity Detection Logic
-
-1. **Elite Proxy**: No proxy headers detected
-2. **Anonymous Proxy**: Proxy headers present, but original IP hidden  
-3. **Transparent Proxy**: Original IP address can be detected
-
-## Performance
-
-- Response time: < 100ms (excluding geolocation lookup)
-- Geolocation timeout: 5 seconds with fallback
-- Health check: < 10ms
-
-## License
-
-ISC 
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `PORT` | `8000` | Listen port |
+| `NODE_ENV` | `development` | |
+| `TRUST_PROXY` | `1` | Express hop count behind nginx |
+| `CORS_ORIGINS` | `*` | Comma-separated or `*` |
+| `GEO_TIMEOUT_MS` | `5000` | ipapi / ip-api timeout |
+| `BLACKLIST_TIMEOUT_MS` | `2500` | Per-DNSBL timeout |
