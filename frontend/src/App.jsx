@@ -6,7 +6,9 @@ import { codeExamples, languageOptions } from './data/codeExamples.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const API_URL = 'https://api.proxy-judge.com/judge';
+const API_BASE = import.meta.env.DEV ? 'http://localhost:8000' : 'https://api.proxy-judge.com';
+const API_URL = `${API_BASE}/judge`;
+const HEALTH_URL = `${API_BASE}/health`;
 
 const RESPONSE_FIELDS = [
     {
@@ -90,13 +92,65 @@ function CopyButton({ text, label = 'copy' }) {
     );
 }
 
+function StatusDot({ status }) {
+    const color =
+        status === 'live' ? 'bg-mint' : status === 'down' ? 'bg-rose-400' : 'bg-dim';
+    return (
+        <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+            {status === 'live' && (
+                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${color} opacity-60`} />
+            )}
+            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${color} ${status === 'checking' ? 'animate-pulse' : ''}`} />
+        </span>
+    );
+}
+
+function ApiStatusBadge({ status }) {
+    const label = status === 'live' ? 'API live' : status === 'down' ? 'API down' : 'Checking';
+    const styles =
+        status === 'live'
+            ? 'border-mint/40 text-mint'
+            : status === 'down'
+                ? 'border-rose-400/40 text-rose-300'
+                : 'border-line text-dim';
+
+    return (
+        <span
+            className={`hidden items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest sm:inline-flex ${styles}`}
+            title={status === 'live' ? 'Health check passed' : status === 'down' ? 'Could not reach /health' : 'Pinging /health'}
+            aria-live="polite"
+        >
+            <StatusDot status={status} />
+            {label}
+        </span>
+    );
+}
+
 export default function App() {
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
     const [latency, setLatency] = useState(null);
     const [selectedLanguage, setSelectedLanguage] = useState('curl');
+    const [apiStatus, setApiStatus] = useState('checking'); // checking | live | down
     const rootRef = useRef(null);
     const demoRef = useRef(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const checkHealth = async () => {
+            try {
+                const res = await fetch(HEALTH_URL, { signal: controller.signal });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                setApiStatus(data.status === 'OK' ? 'live' : 'down');
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                setApiStatus('down');
+            }
+        };
+        checkHealth();
+        return () => controller.abort();
+    }, []);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -156,14 +210,15 @@ export default function App() {
         setResponse(null);
         const start = performance.now();
         try {
-            const apiUrl = import.meta.env.DEV ? 'http://localhost:8000/judge' : API_URL;
-            const res = await fetch(apiUrl);
+            const res = await fetch(API_URL);
             const data = await res.json();
             setLatency(Math.round(performance.now() - start));
             setResponse(data);
+            setApiStatus('live');
         } catch {
             setLatency(Math.round(performance.now() - start));
             setResponse({ error: 'Could not reach the judge. Try again or curl it directly.' });
+            setApiStatus('down');
         }
         setLoading(false);
         requestAnimationFrame(() => {
@@ -183,10 +238,7 @@ export default function App() {
             >
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
                     <a href="#" className="flex items-center gap-2.5 font-mono text-sm font-semibold tracking-widest text-white">
-                        <span className="relative flex h-2.5 w-2.5">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-60" />
-                            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-mint" />
-                        </span>
+                        <StatusDot status={apiStatus} />
                         PROXY_JUDGE
                     </a>
                     <nav className="hidden items-center gap-8 font-mono text-xs uppercase tracking-widest text-dim md:flex">
@@ -194,12 +246,15 @@ export default function App() {
                         <a href="#response" className="transition-colors hover:text-mint">Response</a>
                         <a href="#code" className="transition-colors hover:text-mint">Integrate</a>
                     </nav>
-                    <button
-                        onClick={scrollToDemo}
-                        className="rounded-full border border-mint/40 px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-mint transition-colors hover:bg-mint/10"
-                    >
-                        Test now
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <ApiStatusBadge status={apiStatus} />
+                        <button
+                            onClick={scrollToDemo}
+                            className="rounded-full border border-mint/40 px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-mint transition-colors hover:bg-mint/10"
+                        >
+                            Test now
+                        </button>
+                    </div>
                 </div>
             </header>
 
