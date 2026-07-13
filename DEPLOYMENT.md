@@ -67,6 +67,18 @@ git pull
 docker compose up -d --build
 ```
 
+## Spamhaus DQS (recommended on DigitalOcean)
+
+DigitalOcean's shared DNS resolver is blocked by the Spamhaus public mirror.
+Add your 26-character DQS key only to the droplet's `.env`:
+
+```env
+SPAMHAUS_DQS_KEY=your_26_character_dqs_key
+```
+
+Then rebuild the API with `docker compose up -d --build api`. Do not add the
+real key to `.env.example` or commit it to Git.
+
 ## Important nginx behavior
 
 nginx sets `X-Real-IP` to the TCP peer (proxy exit IP) and **passes `X-Forwarded-For` through unchanged**. That lets `/judge` classify elite vs transparent proxies correctly. Do not switch to `$proxy_add_x_forwarded_for` for this service.

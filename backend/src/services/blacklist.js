@@ -2,12 +2,23 @@ import dns from 'node:dns/promises';
 import { config } from '../config.js';
 import { isPrivateIP, normalizeIP } from '../utils/ip.js';
 
+const SPAMHAUS_DQS_KEY_PATTERN = /^[a-z0-9]{26}$/i;
+
+/** Build the public or authenticated Spamhaus ZEN zone. */
+export function getSpamhausZone(dqsKey = config.spamhausDqsKey) {
+  if (!dqsKey) return 'zen.spamhaus.org';
+  if (!SPAMHAUS_DQS_KEY_PATTERN.test(dqsKey)) {
+    throw new Error('SPAMHAUS_DQS_KEY must be a 26-character alphanumeric key');
+  }
+  return `${dqsKey.toLowerCase()}.zen.dq.spamhaus.net`;
+}
+
 /**
- * Public DNSBLs commonly used for open-proxy / spam reputation checks.
+ * DNSBLs commonly used for open-proxy / spam reputation checks.
  * A positive hit means the IP is listed — useful signal, not a legal verdict.
  */
 const DNSBL_ZONES = [
-  { name: 'zen.spamhaus.org', label: 'Spamhaus ZEN', provider: 'spamhaus' },
+  { name: getSpamhausZone(), label: 'Spamhaus ZEN', provider: 'spamhaus' },
   { name: 'bl.spamcop.net', label: 'SpamCop' },
   { name: 'dnsbl.sorbs.net', label: 'SORBS' },
   { name: 'b.barracudacentral.org', label: 'Barracuda' },

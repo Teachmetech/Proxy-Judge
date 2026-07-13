@@ -11,4 +11,6 @@ export const config = {
   blacklistTimeoutMs: Number(process.env.BLACKLIST_TIMEOUT_MS) || 750,
   geoCacheTtlMs: Number(process.env.GEO_CACHE_TTL_MS) || 60 * 60 * 1000,
   blacklistCacheTtlMs: Number(process.env.BLACKLIST_CACHE_TTL_MS) || 10 * 60 * 1000,
+  /** Optional Spamhaus DQS credential. Keep this in .env, never source control. */
+  spamhausDqsKey: process.env.SPAMHAUS_DQS_KEY?.trim() || null,
 };

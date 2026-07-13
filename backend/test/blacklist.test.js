@@ -1,6 +1,26 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { interpretDnsblAnswers } from '../src/services/blacklist.js';
+import { getSpamhausZone, interpretDnsblAnswers } from '../src/services/blacklist.js';
+
+describe('getSpamhausZone', () => {
+  it('uses the public mirror when no DQS key is configured', () => {
+    assert.equal(getSpamhausZone(null), 'zen.spamhaus.org');
+  });
+
+  it('builds the authenticated DQS zone without exposing it elsewhere', () => {
+    assert.equal(
+      getSpamhausZone('abcdefghijklmnopqrstuvwxyz'),
+      'abcdefghijklmnopqrstuvwxyz.zen.dq.spamhaus.net',
+    );
+  });
+
+  it('rejects malformed DQS keys instead of silently using a broken zone', () => {
+    assert.throws(
+      () => getSpamhausZone('not-a-valid-key'),
+      /26-character alphanumeric key/,
+    );
+  });
+});
 
 describe('interpretDnsblAnswers', () => {
   const spamhaus = { label: 'Spamhaus ZEN', provider: 'spamhaus' };

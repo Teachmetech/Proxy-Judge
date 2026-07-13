@@ -44,6 +44,9 @@ Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DN
 `PROXY_BLACKLIST_ERRORS` reports DNSBLs that did not produce a usable verdict.
 For example, Spamhaus `127.255.255.254` is returned as
 `public_resolver_blocked`; it is never counted as a reputation listing.
+Set `SPAMHAUS_DQS_KEY` in the deployment `.env` to use the authenticated
+`<key>.zen.dq.spamhaus.net` zone instead of the public mirror. Never commit the
+real key.
 
 `JUDGE_PROCESSING_MS` measures external lookups and server work, not proxy
 speed. Client code should measure the complete HTTP round trip and subtract
@@ -92,5 +95,6 @@ See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full droplet walkthrough.
 | `CORS_ORIGINS` | `*` | Comma-separated or `*` |
 | `GEO_TIMEOUT_MS` | `5000` | ipapi / ip-api timeout |
 | `BLACKLIST_TIMEOUT_MS` | `750` | Per-DNSBL timeout |
+| `SPAMHAUS_DQS_KEY` | unset | Optional 26-character DQS credential |
 | `GEO_CACHE_TTL_MS` | `3600000` | Geolocation/proxy-intelligence cache TTL |
 | `BLACKLIST_CACHE_TTL_MS` | `600000` | DNSBL result cache TTL |
