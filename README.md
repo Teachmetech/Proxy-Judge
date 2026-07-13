@@ -29,6 +29,7 @@ Example response:
 {
   "PROXY_IP": "203.0.113.50",
   "PROXY_ANONYMITY": "ELITE",
+  "PROXY_DETECTED": false,
   "PROXY_COUNTRY": "US",
   "PROXY_CITY": "New York",
   "PROXY_REGION": "New York",
@@ -40,6 +41,9 @@ Example response:
   "PROXY_BLACKLISTED": false,
   "PROXY_BLACKLIST_COUNT": 0,
   "PROXY_BLACKLISTS": [],
+  "PROXY_BLACKLIST_CHECKED": 5,
+  "PROXY_BLACKLIST_ATTEMPTED": 5,
+  "PROXY_BLACKLIST_ERRORS": [],
   "ORIGINAL_CLIENT_IP": null,
   "REQUEST_TIME": 1767932460,
   "REQUEST_TIME_FLOAT": 1767932460.134,
@@ -50,11 +54,28 @@ Example response:
 | Field | Meaning |
 |-------|---------|
 | `PROXY_ANONYMITY` | `ELITE` / `ANONYMOUS` / `TRANSPARENT` |
+| `PROXY_DETECTED` | Whether headers or IP intelligence revealed proxy use |
 | `PROXY_IP` | Exit IP the judge saw |
 | `PROXY_COUNTRY` / `PROXY_CITY` | Geo of the exit node |
 | `PROXY_BLACKLISTED` | `true` if listed on any checked DNSBL |
+| `PROXY_BLACKLIST_ERRORS` | Lists that could not return a reputation verdict |
 | `ORIGINAL_CLIENT_IP` | Leaked client IP when anonymity is `TRANSPARENT` |
 | `REQUEST_TIME` | Unix timestamp (seconds) when the request hit the judge |
+| `JUDGE_PROCESSING_MS` | Time spent inside the judge; not proxy latency |
+
+## Measuring proxy speed
+
+The server cannot know when its response arrives back at the caller, so proxy
+round-trip time cannot truthfully be embedded in that same response. Measure the
+request around your HTTP call, then separate judge work from network/proxy time:
+
+```text
+network + proxy time ≈ client round trip time - JUDGE_PROCESSING_MS
+```
+
+The live tester displays all three values. To estimate the proxy's added cost,
+compare its network time with a direct request from the same client. The API also
+sends `Server-Timing: judge;dur=...` for clients that support that standard.
 
 More endpoints and env vars: [backend/README.md](./backend/README.md)
 

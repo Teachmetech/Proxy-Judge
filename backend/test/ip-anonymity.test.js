@@ -73,4 +73,29 @@ describe('detectProxyAnonymity', () => {
     assert.equal(result.level, 'ANONYMOUS');
     assert.equal(result.originalClientIP, null);
   });
+
+  it('classifies anonymous when IP intelligence detects a proxy', () => {
+    const req = {
+      headers: {
+        'x-real-ip': connecting,
+        host: 'api.proxy-judge.com',
+      },
+    };
+    const result = detectProxyAnonymity(req, connecting, { proxyDetected: true });
+    assert.equal(result.level, 'ANONYMOUS');
+    assert.equal(result.proxyDetected, true);
+    assert.equal(result.originalClientIP, null);
+  });
+
+  it('keeps a leaked original IP transparent even when IP intelligence detects a proxy', () => {
+    const req = {
+      headers: {
+        'x-real-ip': connecting,
+        'x-forwarded-for': '198.51.100.7',
+      },
+    };
+    const result = detectProxyAnonymity(req, connecting, { proxyDetected: true });
+    assert.equal(result.level, 'TRANSPARENT');
+    assert.equal(result.originalClientIP, '198.51.100.7');
+  });
 });

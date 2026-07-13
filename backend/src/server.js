@@ -21,8 +21,8 @@ app.use(
 const corsOptions =
   config.corsOrigins === '*' ||
   (Array.isArray(config.corsOrigins) && config.corsOrigins.includes('*'))
-    ? { origin: true }
-    : { origin: config.corsOrigins };
+    ? { origin: true, exposedHeaders: ['Server-Timing'] }
+    : { origin: config.corsOrigins, exposedHeaders: ['Server-Timing'] };
 
 app.use(cors(corsOptions));
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));

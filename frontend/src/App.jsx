@@ -18,6 +18,12 @@ const RESPONSE_FIELDS = [
         sample: '"ELITE"',
     },
     {
+        key: 'PROXY_DETECTED',
+        type: 'boolean',
+        desc: 'True when request headers or IP intelligence reveal proxy use.',
+        sample: 'true',
+    },
+    {
         key: 'PROXY_COUNTRY',
         type: 'string',
         desc: 'ISO 3166-1 country code where your exit node appears to live.',
@@ -40,6 +46,12 @@ const RESPONSE_FIELDS = [
         type: 'float',
         desc: 'Same timestamp with microsecond precision, for latency math.',
         sample: '1767932460.1342',
+    },
+    {
+        key: 'JUDGE_PROCESSING_MS',
+        type: 'float',
+        desc: 'Server-side lookup and processing time, separated from the client round trip.',
+        sample: '42.15',
     },
 ];
 
@@ -212,11 +224,21 @@ export default function App() {
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
-            setLatency(Math.round(performance.now() - start));
+            const roundTripMs = Math.round((performance.now() - start) * 100) / 100;
+            const judgeMs = Number(data.JUDGE_PROCESSING_MS) || 0;
+            setLatency({
+                roundTripMs,
+                judgeMs,
+                networkMs: Math.max(0, Math.round((roundTripMs - judgeMs) * 100) / 100),
+            });
             setResponse(data);
             setApiStatus('live');
         } catch {
-            setLatency(Math.round(performance.now() - start));
+            setLatency({
+                roundTripMs: Math.round((performance.now() - start) * 100) / 100,
+                judgeMs: null,
+                networkMs: null,
+            });
             setResponse({ error: 'Could not reach the judge. Try again or curl it directly.' });
             setApiStatus('down');
         }
@@ -238,6 +260,11 @@ export default function App() {
             >
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
                     <a href="#" className="flex items-center gap-2.5 font-mono text-sm font-semibold tracking-widest text-white">
+                        <img
+                            src="/proxy-judge-logo.svg"
+                            alt=""
+                            className="h-8 w-8 shrink-0 drop-shadow-[0_0_10px_rgba(34,255,178,0.3)]"
+                        />
                         <StatusDot status={apiStatus} />
                         PROXY_JUDGE
                     </a>
@@ -368,7 +395,14 @@ export default function App() {
                                 <div className="mb-4 flex items-center justify-between">
                                     <p className="font-mono text-[11px] uppercase tracking-widest text-dim">Verdict</p>
                                     {latency !== null && response && (
-                                        <span className="font-mono text-[11px] text-mint">{latency} ms</span>
+                                        <span className="text-right font-mono text-[11px] text-mint">
+                                            {latency.roundTripMs} ms round trip
+                                            {latency.networkMs !== null && (
+                                                <span className="block text-dim">
+                                                    ~{latency.networkMs} ms network + proxy · {latency.judgeMs} ms judge
+                                                </span>
+                                            )}
+                                        </span>
                                     )}
                                 </div>
                                 {response ? (
@@ -392,7 +426,7 @@ export default function App() {
             {/* ================= RESPONSE FORMAT ================= */}
             <section id="response" className="relative z-10 px-5 py-24 md:px-8 md:py-36">
                 <div className="mx-auto max-w-6xl">
-                    <SectionHeading index="02" title="Five fields. Zero noise.">
+                    <SectionHeading index="02" title="Useful fields. Zero noise.">
                         Everything you need to score a proxy, nothing you don't.
                     </SectionHeading>
 

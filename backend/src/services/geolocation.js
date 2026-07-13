@@ -1,6 +1,29 @@
 import { config } from '../config.js';
 import { isPrivateIP } from '../utils/ip.js';
 
+const locationCache = new Map();
+
+function getCachedLocation(ip) {
+  const cached = locationCache.get(ip);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    locationCache.delete(ip);
+    return null;
+  }
+  return cached.value;
+}
+
+function cacheLocation(ip, value) {
+  if (locationCache.size >= 5000) {
+    locationCache.delete(locationCache.keys().next().value);
+  }
+  locationCache.set(ip, {
+    value,
+    expiresAt: Date.now() + config.geoCacheTtlMs,
+  });
+  return value;
+}
+
 async function fetchJSON(url, timeoutMs) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -32,6 +55,8 @@ function emptyLocation(overrides = {}) {
     isp: null,
     org: null,
     timezone: null,
+    proxyDetected: null,
+    hosting: null,
     ...overrides,
   };
 }
@@ -51,6 +76,8 @@ async function fromIpapi(ip) {
     isp: data.org || null,
     org: data.org || null,
     timezone: data.timezone || null,
+    proxyDetected: null,
+    hosting: null,
   };
 }
 
@@ -67,6 +94,8 @@ async function fromIpApiCom(ip) {
     'timezone',
     'isp',
     'org',
+    'proxy',
+    'hosting',
     'query',
   ].join(',');
 
@@ -89,6 +118,8 @@ async function fromIpApiCom(ip) {
     isp: data.isp || null,
     org: data.org || null,
     timezone: data.timezone || null,
+    proxyDetected: data.proxy ?? null,
+    hosting: data.hosting ?? null,
   };
 }
 
@@ -106,14 +137,19 @@ export async function getGeolocation(ip) {
     });
   }
 
+  const cached = getCachedLocation(ip);
+  if (cached) return cached;
+
+  // ip-api includes a dedicated proxy/VPN/Tor signal used by the anonymity
+  // classifier. Generic hosting alone is not treated as proof of proxy use.
   try {
-    return await fromIpapi(ip);
+    return cacheLocation(ip, await fromIpApiCom(ip));
   } catch (error) {
     console.error('Primary geolocation error:', error.message);
   }
 
   try {
-    return await fromIpApiCom(ip);
+    return cacheLocation(ip, await fromIpapi(ip));
   } catch (error) {
     console.error('Fallback geolocation error:', error.message);
   }

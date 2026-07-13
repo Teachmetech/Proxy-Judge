@@ -17,6 +17,7 @@ Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DN
 {
   "PROXY_IP": "203.0.113.50",
   "PROXY_ANONYMITY": "ELITE",
+  "PROXY_DETECTED": false,
   "PROXY_COUNTRY": "US",
   "PROXY_CITY": "New York",
   "PROXY_REGION": "New York",
@@ -28,6 +29,9 @@ Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DN
   "PROXY_BLACKLISTED": false,
   "PROXY_BLACKLIST_COUNT": 0,
   "PROXY_BLACKLISTS": [],
+  "PROXY_BLACKLIST_CHECKED": 5,
+  "PROXY_BLACKLIST_ATTEMPTED": 5,
+  "PROXY_BLACKLIST_ERRORS": [],
   "ORIGINAL_CLIENT_IP": null,
   "REQUEST_TIME": 1767932460,
   "REQUEST_TIME_FLOAT": 1767932460.134,
@@ -36,6 +40,16 @@ Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DN
 ```
 
 `PROXY_ANONYMITY` is one of `ELITE`, `ANONYMOUS`, `TRANSPARENT`.
+
+`PROXY_BLACKLIST_ERRORS` reports DNSBLs that did not produce a usable verdict.
+For example, Spamhaus `127.255.255.254` is returned as
+`public_resolver_blocked`; it is never counted as a reputation listing.
+
+`JUDGE_PROCESSING_MS` measures external lookups and server work, not proxy
+speed. Client code should measure the complete HTTP round trip and subtract
+`JUDGE_PROCESSING_MS` to estimate network plus proxy time. A direct-request
+baseline is needed to isolate the proxy's added latency. The response also
+includes a `Server-Timing` header containing the judge duration.
 
 ## Local development
 
@@ -77,4 +91,6 @@ See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full droplet walkthrough.
 | `TRUST_PROXY` | `1` | Express hop count behind nginx |
 | `CORS_ORIGINS` | `*` | Comma-separated or `*` |
 | `GEO_TIMEOUT_MS` | `5000` | ipapi / ip-api timeout |
-| `BLACKLIST_TIMEOUT_MS` | `2500` | Per-DNSBL timeout |
+| `BLACKLIST_TIMEOUT_MS` | `750` | Per-DNSBL timeout |
+| `GEO_CACHE_TTL_MS` | `3600000` | Geolocation/proxy-intelligence cache TTL |
+| `BLACKLIST_CACHE_TTL_MS` | `600000` | DNSBL result cache TTL |

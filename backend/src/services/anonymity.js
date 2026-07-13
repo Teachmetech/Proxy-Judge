@@ -48,7 +48,7 @@ function isInfraOwnedHeader(name, value, connectingIP) {
  * - TRANSPARENT: original client IP (or equivalent) is exposed
  * - ANONYMOUS: proxy indicators present, original IP hidden
  */
-export function detectProxyAnonymity(req, connectingIP) {
+export function detectProxyAnonymity(req, connectingIP, signals = {}) {
   const headers = req.headers;
   let leakedClientIP = null;
   let hasTransparentSignal = false;
@@ -105,18 +105,21 @@ export function detectProxyAnonymity(req, connectingIP) {
     return {
       level: 'TRANSPARENT',
       originalClientIP: leakedClientIP,
+      proxyDetected: true,
     };
   }
 
-  if (hasAnonymousSignal) {
+  if (hasAnonymousSignal || signals.proxyDetected === true) {
     return {
       level: 'ANONYMOUS',
       originalClientIP: null,
+      proxyDetected: true,
     };
   }
 
   return {
     level: 'ELITE',
     originalClientIP: null,
+    proxyDetected: false,
   };
 }
