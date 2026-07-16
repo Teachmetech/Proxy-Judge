@@ -1,6 +1,6 @@
 # Proxy Judge
 
-Free HTTP proxy testing API. Route a request through your proxy to the judge and get back anonymity level, exit-node location, blacklist status, and timing — as JSON. No API keys, no signup.
+Free proxy testing API. Route a request through an HTTP, TLS-to-proxy, SOCKS4, or SOCKS5 proxy and get back anonymity level, exit-node location, blacklist status, and timing — as JSON. No API keys, no signup.
 
 - **Site:** [proxy-judge.com](https://proxy-judge.com)
 - **API:** [api.proxy-judge.com](https://api.proxy-judge.com)
@@ -11,6 +11,7 @@ Free HTTP proxy testing API. Route a request through your proxy to the judge and
 - **Exit-node geolocation** — country, city, region, coordinates, ISP / org
 - **DNSBL blacklist checks** — Spamhaus, SpamCop, SORBS, Barracuda, UCEPROTECT
 - **Timing** — Unix timestamps plus server processing time
+- **Protocol metadata** — echoes a normalized, caller-declared test transport
 - **Zero auth** — public `GET` endpoint
 
 ## Quick example
@@ -20,6 +21,7 @@ Call the judge **through** the proxy under test (not from your browser alone):
 ```bash
 curl -x http://user:pass@HOST:PORT \
   "https://api.proxy-judge.com/judge" \
+  -H "X-Proxy-Test-Protocol: https_connect" \
   -H "Accept: application/json"
 ```
 
@@ -45,6 +47,8 @@ Example response:
   "PROXY_BLACKLIST_ATTEMPTED": 5,
   "PROXY_BLACKLIST_ERRORS": [],
   "ORIGINAL_CLIENT_IP": null,
+  "TESTED_PROTOCOL": "HTTPS_CONNECT",
+  "TESTED_PROTOCOL_SOURCE": "CLIENT_DECLARED",
   "REQUEST_TIME": 1767932460,
   "REQUEST_TIME_FLOAT": 1767932460.134,
   "JUDGE_PROCESSING_MS": 42.15
@@ -60,6 +64,8 @@ Example response:
 | `PROXY_BLACKLISTED` | `true` if listed on any checked DNSBL |
 | `PROXY_BLACKLIST_ERRORS` | Lists that could not return a reputation verdict |
 | `ORIGINAL_CLIENT_IP` | Leaked client IP when anonymity is `TRANSPARENT` |
+| `TESTED_PROTOCOL` | Normalized protocol declared by the checker: `HTTP`, `HTTPS_CONNECT`, `HTTPS`, `SOCKS4`, or `SOCKS5` |
+| `TESTED_PROTOCOL_SOURCE` | `CLIENT_DECLARED`; the judge cannot independently observe proxy negotiation |
 | `REQUEST_TIME` | Unix timestamp (seconds) when the request hit the judge |
 | `JUDGE_PROCESSING_MS` | Time spent inside the judge; not proxy latency |
 
@@ -76,6 +82,39 @@ network + proxy time ≈ client round trip time - JUDGE_PROCESSING_MS
 The live tester displays all three values. To estimate the proxy's added cost,
 compare its network time with a direct request from the same client. The API also
 sends `Server-Timing: judge;dur=...` for clients that support that standard.
+
+## Testing protocols
+
+The protocol negotiation happens between the caller and proxy, so `/judge`
+cannot determine it from the destination-side request. A checker should try
+each transport explicitly and send `X-Proxy-Test-Protocol` on the request:
+
+```bash
+# Plain HTTP forwarding
+curl -x http://HOST:PORT http://api.ipify.org?format=json
+
+# HTTPS tunneling through an HTTP proxy (CONNECT)
+curl -x http://HOST:PORT https://api.proxy-judge.com/judge \
+  -H 'X-Proxy-Test-Protocol: https_connect'
+
+# TLS connection to the proxy itself
+curl -x https://HOST:PORT https://api.proxy-judge.com/judge \
+  -H 'X-Proxy-Test-Protocol: https'
+
+# SOCKS4
+curl --socks4 HOST:PORT https://api.proxy-judge.com/judge \
+  -H 'X-Proxy-Test-Protocol: socks4'
+
+# SOCKS5 with proxy-side DNS
+curl --socks5-hostname HOST:PORT https://api.proxy-judge.com/judge \
+  -H 'X-Proxy-Test-Protocol: socks5'
+```
+
+`TESTED_PROTOCOL` is an allowlisted echo of that claim, not an independently
+verified server observation. A capable checker should aggregate every
+successful attempt into its own `SUPPORTED_PROTOCOLS` array. `HTTPS_CONNECT`
+and `HTTPS` are separate because CONNECT tunneling and a TLS connection to the
+proxy are different capabilities.
 
 More endpoints and env vars: [backend/README.md](./backend/README.md)
 

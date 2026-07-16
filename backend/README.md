@@ -1,6 +1,6 @@
 # Proxy Judge Backend
 
-Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DNSBL blacklist status, and timing.
+Express API that judges requests routed through HTTP, HTTPS, SOCKS4, and SOCKS5 proxies: anonymity level, exit-node geolocation, DNSBL blacklist status, and timing.
 
 ## Endpoints
 
@@ -33,6 +33,8 @@ Express API that judges HTTP proxies: anonymity level, exit-node geolocation, DN
   "PROXY_BLACKLIST_ATTEMPTED": 5,
   "PROXY_BLACKLIST_ERRORS": [],
   "ORIGINAL_CLIENT_IP": null,
+  "TESTED_PROTOCOL": "SOCKS5",
+  "TESTED_PROTOCOL_SOURCE": "CLIENT_DECLARED",
   "REQUEST_TIME": 1767932460,
   "REQUEST_TIME_FLOAT": 1767932460.134,
   "JUDGE_PROCESSING_MS": 42.15
@@ -53,6 +55,12 @@ speed. Client code should measure the complete HTTP round trip and subtract
 `JUDGE_PROCESSING_MS` to estimate network plus proxy time. A direct-request
 baseline is needed to isolate the proxy's added latency. The response also
 includes a `Server-Timing` header containing the judge duration.
+
+`TESTED_PROTOCOL` is populated only when the caller sends an allowlisted
+`X-Proxy-Test-Protocol` value. It is normalized to `HTTP`, `HTTPS_CONNECT`,
+`HTTPS`, `SOCKS4`, or `SOCKS5`, and `TESTED_PROTOCOL_SOURCE` is then
+`CLIENT_DECLARED`. The judge cannot independently observe HTTP CONNECT or SOCKS
+negotiation, so consumers must not treat this echo as server-verified evidence.
 
 ## Local development
 

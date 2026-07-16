@@ -3,6 +3,7 @@ import { getConnectingIP } from '../utils/ip.js';
 import { detectProxyAnonymity } from '../services/anonymity.js';
 import { getGeolocation } from '../services/geolocation.js';
 import { checkBlacklists } from '../services/blacklist.js';
+import { getTestProtocol } from '../services/testProtocol.js';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.get('/judge', async (req, res) => {
     const anonymity = detectProxyAnonymity(req, connectingIP, {
       proxyDetected: location.proxyDetected,
     });
+    const testedProtocol = getTestProtocol(req.get('X-Proxy-Test-Protocol'));
 
     const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
     const roundedElapsedMs = Math.round(elapsedMs * 100) / 100;
@@ -51,6 +53,8 @@ router.get('/judge', async (req, res) => {
       PROXY_BLACKLIST_ATTEMPTED: blacklist.attempted,
       PROXY_BLACKLIST_ERRORS: blacklist.errors,
       ORIGINAL_CLIENT_IP: anonymity.originalClientIP,
+      TESTED_PROTOCOL: testedProtocol,
+      TESTED_PROTOCOL_SOURCE: testedProtocol ? 'CLIENT_DECLARED' : null,
       REQUEST_TIME: requestTime,
       REQUEST_TIME_FLOAT: requestTimeFloat,
       JUDGE_PROCESSING_MS: roundedElapsedMs,

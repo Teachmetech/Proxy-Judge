@@ -1,7 +1,7 @@
 {
   "name": "proxy-judge-backend",
   "version": "1.1.0",
-  "description": "Proxy Judge API — anonymity, geolocation, blacklist, and timing for HTTP proxies",
+  "description": "Proxy Judge API — anonymity, geolocation, blacklist, and timing for HTTP, HTTPS, SOCKS4, and SOCKS5 proxies",
   "main": "src/server.js",
   "type": "module",
   "scripts": {
