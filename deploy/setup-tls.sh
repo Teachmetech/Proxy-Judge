@@ -79,3 +79,5 @@ docker compose exec nginx nginx -s reload
 docker compose --profile tls up -d certbot
 
 echo "Done. Test: curl https://${DOMAIN}/judge"
+echo "Plain HTTP endpoint (requires a DNS-only A record):"
+echo "  curl http://plain.proxy-judge.com/judge -H 'X-Proxy-Test-Protocol: http'"

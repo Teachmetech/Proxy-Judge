@@ -32,3 +32,7 @@ curl -sf "http://127.0.0.1/health" | head -c 200 || curl -sf "http://127.0.0.1:8
 echo ""
 echo "Next: point DNS A record for api.proxy-judge.com here, then:"
 echo "  EMAIL=you@example.com ./deploy/setup-tls.sh"
+echo ""
+echo "For HTTP-only proxies, also create this Cloudflare DNS record:"
+echo "  plain.proxy-judge.com -> this droplet (A record, DNS only / gray cloud)"
+echo "The dedicated endpoint will be: http://plain.proxy-judge.com/judge"

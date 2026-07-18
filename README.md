@@ -4,6 +4,7 @@ Free proxy testing API. Route a request through an HTTP, TLS-to-proxy, SOCKS4, o
 
 - **Site:** [proxy-judge.com](https://proxy-judge.com)
 - **API:** [api.proxy-judge.com](https://api.proxy-judge.com)
+- **Plain HTTP judge:** [http://plain.proxy-judge.com/judge](http://plain.proxy-judge.com/judge)
 
 ## Features
 
@@ -91,7 +92,8 @@ each transport explicitly and send `X-Proxy-Test-Protocol` on the request:
 
 ```bash
 # Plain HTTP forwarding
-curl -x http://HOST:PORT http://api.ipify.org?format=json
+curl -x http://HOST:PORT http://plain.proxy-judge.com/judge \
+  -H 'X-Proxy-Test-Protocol: http'
 
 # HTTPS tunneling through an HTTP proxy (CONNECT)
 curl -x http://HOST:PORT https://api.proxy-judge.com/judge \
@@ -163,6 +165,12 @@ cp .env.example .env
 EMAIL=you@example.com ./deploy/setup-tls.sh
 ```
 
+HTTP-only forward proxies use `http://plain.proxy-judge.com/judge`. Its
+Cloudflare `A` record must remain **DNS only** (gray cloud), and its nginx
+virtual host never redirects to HTTPS. It reaches the same backend `/judge`
+handler as the HTTPS API, so it returns the complete anonymity, geolocation,
+ISP, and blacklist verdict.
+
 Full walkthrough: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 Frontend can be deployed separately (e.g. Vercel) to `proxy-judge.com`.
@@ -171,7 +179,8 @@ Frontend can be deployed separately (e.g. Vercel) to `proxy-judge.com`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/judge` | Main verdict (use via proxy) |
+| `GET` | `https://api.proxy-judge.com/judge` | Main verdict for CONNECT, TLS-to-proxy, and SOCKS probes |
+| `GET` | `http://plain.proxy-judge.com/judge` | Main verdict for HTTP-only forward proxies; never redirects |
 | `GET` | `/headers` | Connecting IP + raw headers (debug) |
 | `GET` | `/health` | Health check |
 | `GET` | `/` | API info |

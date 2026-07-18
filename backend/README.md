@@ -91,6 +91,18 @@ Then point `api.proxy-judge.com` A record at the droplet and:
 EMAIL=you@example.com ./deploy/setup-tls.sh
 ```
 
+For HTTP-only forward proxies, also create a Cloudflare **DNS-only** `A`
+record from `plain.proxy-judge.com` to the droplet. The dedicated endpoint is:
+
+```bash
+curl -x http://PROXY_HOST:PORT http://plain.proxy-judge.com/judge \
+  -H 'X-Proxy-Test-Protocol: http'
+```
+
+It uses the same Express `/judge` handler as the HTTPS endpoint. The separate
+nginx configuration is mounted independently so rerunning `setup-tls.sh` does
+not replace it with an HTTPS redirect.
+
 See [DEPLOYMENT.md](../DEPLOYMENT.md) for the full droplet walkthrough.
 
 ## Environment
