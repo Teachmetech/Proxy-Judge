@@ -95,6 +95,44 @@ curl -i --resolve plain.proxy-judge.com:80:DROPLET_IP \
 
 ## 5. Updates
 
+### Recover or verify an existing certificate
+
+From the deployed Compose project directory, compare the certificate on disk
+with the certificate served on a new TLS connection:
+
+```bash
+openssl x509 -in deploy/certbot/conf/live/api.proxy-judge.com/fullchain.pem -noout -enddate -fingerprint -sha256
+openssl s_client -connect api.proxy-judge.com:443 -servername api.proxy-judge.com </dev/null 2>/dev/null | openssl x509 -noout -enddate -fingerprint -sha256
+```
+
+If the mounted certificate has expired, renew its existing lineage:
+
+```bash
+docker compose --profile tls run --rm --no-deps --entrypoint certbot certbot renew --cert-name api.proxy-judge.com --webroot -w /var/www/certbot
+```
+
+Once the on-disk certificate is valid, reload and verify it:
+
+```bash
+docker compose exec -T nginx nginx -t && docker compose exec -T nginx nginx -s reload
+curl --fail --max-time 10 https://api.proxy-judge.com/health
+curl --fail --max-time 10 https://api.proxy-judge.com/judge
+```
+
+After updating this checkout, keep the generated TLS configuration in
+`deploy/nginx/default.conf` and apply the renewal services:
+
+```bash
+docker compose --profile tls up -d --no-deps nginx certbot
+docker compose --profile tls ps nginx certbot
+```
+
+Certbot checks for renewal every 12 hours. nginx checks the mounted certificate
+chains every five minutes and gracefully reloads when a chain changes and its
+configuration passes validation.
+
+### Application updates
+
 ```bash
 cd Proxy-Judge
 git pull
